@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tui-mud — Design Document</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2128;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+      --cyan: #56d364;
+      --heading: #e6edf3;
+      --code-bg: #1c2128;
+      --tag-bg: #21262d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+      margin-bottom: 48px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--heading);
+      letter-spacing: -0.02em;
+    }
+    header h1 span { color: var(--accent); }
+    header p {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── Section headings ── */
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--heading);
+      margin: 48px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--heading);
+      margin: 28px 0 8px;
+    }
+
+    /* ── Prose ── */
+    p { margin-bottom: 12px; }
+    p:last-child { margin-bottom: 0; }
+    strong { color: var(--heading); font-weight: 600; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    ul, ol {
+      padding-left: 24px;
+      margin-bottom: 12px;
+    }
+    li { margin-bottom: 4px; }
+
+    /* ── Inline code ── */
+    code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.85em;
+      color: var(--purple);
+    }
+
+    /* ── Code blocks / pre ── */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: var(--cyan);
+    }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.9rem;
+    }
+    th {
+      background: var(--surface2);
+      color: var(--heading);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    td {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: var(--surface); }
+
+    /* ── Component cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      transition: border-color 0.15s;
+    }
+    .card:hover { border-color: var(--accent); }
+    .card-title {
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .card-role {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .card p {
+      font-size: 0.88rem;
+      color: var(--text);
+      margin: 0;
+    }
+
+    /* ── File tree ── */
+    .file-tree {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.9;
+    }
+    .file-tree .dir  { color: var(--accent); }
+    .file-tree .file { color: var(--text); }
+    .file-tree .desc { color: var(--muted); }
+
+    /* ── Data flow steps ── */
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+    }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+      align-items: flex-start;
+    }
+    .steps li::before {
+      content: counter(step);
+      background: var(--accent);
+      color: #000;
+      font-size: 0.75rem;
+      font-weight: 700;
+      min-width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+    .steps li .sub {
+      margin-top: 8px;
+      padding-left: 16px;
+      border-left: 2px solid var(--border);
+    }
+    .steps li .sub p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    /* ── Warning badge ── */
+    .badge {
+      display: inline-block;
+      background: var(--yellow);
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ── Terminal mockup ── */
+    .terminal {
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+    .terminal-bar {
+      background: #1c1c1c;
+      padding: 10px 16px;
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .terminal-bar span {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    .dot-red    { background: #ff5f57; }
+    .dot-yellow { background: #febc2e; }
+    .dot-green  { background: #28c840; }
+    .terminal-body {
+      padding: 16px 20px;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #ddd;
+    }
+    .terminal-body .tui-border  { color: #56d364; }
+    .terminal-body .tui-header  { color: #58a6ff; font-weight: bold; }
+    .terminal-body .tui-screen  { color: #8b949e; }
+    .terminal-body .tui-user    { color: #58a6ff; }
+    .terminal-body .tui-claude  { color: #3fb950; }
+    .terminal-body .tui-input   { color: #d29922; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ── -->
+  <header>
+    <h1><span>tui-mud</span> — Design Document</h1>
+    <p>A terminal chat interface for Claude with a split-screen visual rendering area.</p>
+  </header>
+
+  <!-- ── What is it ── -->
+  <h2>What is tui-mud?</h2>
+  <p>
+    <strong>tui-mud</strong> is a terminal-based chat interface for Claude (Anthropic's AI).
+    It creates a split-screen TUI (Terminal User Interface) that combines a real-time chat
+    area with a dedicated visual rendering area — similar in spirit to a MUD
+    (Multi-User Dungeon), where an AI can describe, draw, and interact within a bounded
+    terminal world.
+  </p>
+  <ul>
+    <li>Chat with Claude in a scrollable history pane</li>
+    <li>Claude can render visual content (ASCII art, diagrams, UI mockups) to a dedicated screen area</li>
+    <li>Claude can execute shell commands and read/write files on the local machine</li>
+    <li>Full keyboard navigation: type, scroll, resize-aware layout</li>
+  </ul>
+
+  <!-- ── Terminal mockup ── -->
+  <div class="terminal">
+    <div class="terminal-bar">
+      <span class="dot-red"></span>
+      <span class="dot-yellow"></span>
+      <span class="dot-green"></span>
+    </div>
+    <div class="terminal-body">
+      <div class="tui-border">┌──────────────────────────────────────────────┐</div>
+      <div class="tui-header">│            Claude Chat TUI                   │</div>
+      <div class="tui-border">├──────────────────────────────────────────────┤</div>
+      <div class="tui-screen">│                                              │</div>
+      <div class="tui-screen">│         Screen Rendering Area                │  ← render_screen tool writes here</div>
+      <div class="tui-screen">│         (ASCII art / diagrams / UI)          │</div>
+      <div class="tui-screen">│                                              │</div>
+      <div class="tui-border">├──────────────────────────────────────────────┤</div>
+      <div class="tui-user">│ You: hello, draw me something cool           │</div>
+      <div class="tui-claude">│ Claude: sure! rendering now...               │</div>
+      <div class="tui-screen">│ [tool: render_screen]                        │</div>
+      <div class="tui-claude">│ Claude: done! what do you think?             │</div>
+      <div class="tui-border">└──────────────────────────────────────────────┘</div>
+      <div class="tui-input">&gt; type here and press Enter_</div>
+    </div>
+  </div>
+
+  <!-- ── File Structure ── -->
+  <h2>File Structure</h2>
+  <div class="file-tree">
+    <div><span class="dir">tui-mud/</span></div>
+    <div>&nbsp;&nbsp;├── <span class="file">chat_tui.mjs</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc">// Entry point — creates and starts the UI</span></div>
+    <div>&nbsp;&nbsp;├── <span class="file">package.json</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc">// Dependencies (only @anthropic-ai/sdk)</span></div>
+    <div>&nbsp;&nbsp;├── <span class="dir">lib/</span></div>
+    <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">ui.mjs</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc">// Terminal rendering, layout, keyboard input</span></div>
+    <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">client.mjs</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc">// Anthropic API communication, tool-use loop</span></div>
+    <div>&nbsp;&nbsp;└── <span class="dir">tools/</span></div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">index.mjs</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc">// Tool registry and dispatcher</span></div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">screen.mjs</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc">// render_screen tool — writes to visual area</span></div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">shell.mjs</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc">// bash tool — executes shell commands</span></div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="file">filesystem.mjs</span>&nbsp;<span class="desc">// read_file / write_file / edit_file tools</span></div>
+  </div>
+
+  <!-- ── Components ── -->
+  <h2>Components</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="card-title">chat_tui.mjs</div>
+      <div class="card-role">Entry Point</div>
+      <p>Minimal bootstrapper. Creates a <code>ChatTUI</code> instance and calls <code>init()</code>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">lib/ui.mjs — ChatTUI</div>
+      <div class="card-role">UI / Rendering</div>
+      <p>Owns the entire terminal display and all user input. Manages layout, ANSI rendering, keyboard events, and scroll state.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">lib/client.mjs — MessageClient</div>
+      <div class="card-role">API / Orchestration</div>
+      <p>Maintains conversation history, sends messages to Claude, and runs the tool-use loop until Claude returns a final text response.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">tools/index.mjs</div>
+      <div class="card-role">Tool Registry</div>
+      <p>Exports all tool schemas and <code>executeTool()</code>. Routes Claude's tool calls to the correct handler. Injects live screen dimensions into tool descriptions.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">tools/screen.mjs</div>
+      <div class="card-role">render_screen Tool</div>
+      <p>Accepts a content string from Claude, word-wraps it, and updates the visual pane. Each call replaces previous content entirely.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">tools/shell.mjs</div>
+      <div class="card-role">bash Tool</div>
+      <p>Runs an arbitrary shell command via <code>execSync</code>. Returns combined stdout/stderr (up to 10 MB).</p>
+    </div>
+    <div class="card">
+      <div class="card-title">tools/filesystem.mjs</div>
+      <div class="card-role">File I/O Tools</div>
+      <p>Provides <code>read_file</code>, <code>write_file</code>, and <code>edit_file</code> (surgical string-replace with exact-match validation).</p>
+    </div>
+  </div>
+
+  <!-- ── Component detail ── -->
+  <h3>lib/ui.mjs — ChatTUI</h3>
+  <ul>
+    <li><strong>Layout calculation</strong>: Divides terminal rows into header, screen area, chat area, and input row. Recalculates on resize.</li>
+    <li><strong>Rendering</strong>: Writes ANSI escape sequences directly to <code>process.stdout</code> to draw borders, color-coded text, and cursor positioning.</li>
+    <li><strong>Input handling</strong>: Enables raw mode on <code>process.stdin</code>. Handles printable characters, Backspace, Enter, arrow keys (scroll), and Ctrl+C.</li>
+    <li><strong>State</strong>: <code>inputBuffer</code>, <code>chatHistory[]</code>, <code>screenContent[]</code>, <code>scrollOffset</code>, <code>screenScrollOffset</code>, <code>isWaiting</code></li>
+  </ul>
+
+  <h3>lib/client.mjs — MessageClient</h3>
+  <ul>
+    <li><strong>Message history</strong>: Maintains <code>messages[]</code> in Anthropic API format across the full conversation.</li>
+    <li><strong>API calls</strong>: Sends requests to <code>claude-sonnet-4-20250514</code> with <code>max_tokens: 8096</code>.</li>
+    <li><strong>Tool-use loop</strong>: After each response, checks <code>stop_reason</code>. If <code>tool_use</code>, extracts tool calls, dispatches via <code>tools/index.mjs</code>, collects results, and sends back <code>tool_result</code> blocks. Repeats until done.</li>
+    <li><strong>UI bridge</strong>: Holds a reference to <code>ChatTUI</code> to call <code>addMessage()</code> and read current screen dimensions.</li>
+  </ul>
+
+  <!-- ── Interaction diagram ── -->
+  <h2>Component Interaction Diagram</h2>
+  <pre>
+┌──────────────────────────────────────────────────────────────────┐
+│                    Terminal  (stdout / stdin)                     │
+└───────────────────────────────┬──────────────────────────────────┘
+                                │ keypress / resize events
+                                ▼
+                    ┌───────────────────────┐
+                    │   ChatTUI  (ui.mjs)   │
+                    │                       │
+                    │  - renders layout     │◄──────────────────────┐
+                    │  - manages input      │                       │
+                    │  - stores history     │                       │
+                    └──────────┬────────────┘                       │
+                               │ sendMessage()                      │ addMessage()
+                               │ (user presses Enter)               │ (reply / tool notices)
+                               ▼                                    │
+                    ┌───────────────────────┐                       │
+                    │  MessageClient        │───────────────────────┘
+                    │  (client.mjs)         │
+                    │                       │
+                    │  - holds messages[]   │
+                    │  - calls Anthropic    │
+                    │  - runs tool loop     │
+                    └──────────┬────────────┘
+                               │ HTTPS  (@anthropic-ai/sdk)
+                               ▼
+                    ┌───────────────────────┐
+                    │   Anthropic API       │
+                    │  (Claude Sonnet 4)    │
+                    └──────────┬────────────┘
+                               │ response (text or tool_use blocks)
+                               ▼
+                    ┌───────────────────────┐
+                    │  Tool Dispatcher      │
+                    │  (tools/index.mjs)    │
+                    └──────┬───────┬────────┘
+              ┌────────────┘       └─────────────────┐
+              ▼                                       ▼
+  ┌─────────────────────┐              ┌──────────────────────────┐
+  │  render_screen      │              │  bash / read_file /      │
+  │  (tools/screen.mjs) │              │  write_file / edit_file  │
+  │                     │              │  (shell.mjs,             │
+  │  calls ui.render    │              │   filesystem.mjs)        │
+  │  Screen(lines)      │              │                          │
+  └──────────┬──────────┘              └──────────────────────────┘
+             │ updates visual pane
+             ▼
+   ┌──────────────────────┐
+   │   Screen Area in     │
+   │   Terminal Display   │
+   └──────────────────────┘
+  </pre>
+
+  <!-- ── Data flow ── -->
+  <h2>Data Flow: User Message → Reply</h2>
+  <ol class="steps">
+    <li>User types text and presses <strong>Enter</strong></li>
+    <li><code>ChatTUI.sendMessage()</code> adds the message to <code>chatHistory</code>, calls <code>MessageClient.sendMessage(text)</code></li>
+    <li><code>MessageClient</code> appends <code>&#123;role: 'user', content: text&#125;</code> to <code>messages[]</code> and calls the Anthropic API</li>
+    <li>API returns a response. If <code>stop_reason === 'tool_use'</code>:
+      <div class="sub">
+        <p>Extract each <code>tool_use</code> block (name + input)</p>
+        <p>Call <code>executeTool(name, input, ui)</code> → dispatches to correct handler</p>
+        <p><code>render_screen</code> updates the visual pane immediately; <code>bash</code> / filesystem tools return result strings</p>
+        <p>Append <code>tool_use</code> + <code>tool_result</code> messages to history, call API again</p>
+        <p>Repeat until <code>stop_reason !== 'tool_use'</code></p>
+      </div>
+    </li>
+    <li>Extract final text response, call <code>ChatTUI.addMessage('claude', text)</code></li>
+    <li><code>ChatTUI.render()</code> redraws the full terminal</li>
+  </ol>
+
+  <!-- ── State ── -->
+  <h2>State Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Location</th><th>Field</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>ChatTUI</code></td><td><code>inputBuffer</code></td><td>Characters typed so far</td></tr>
+      <tr><td><code>ChatTUI</code></td><td><code>chatHistory[]</code></td><td>All rendered chat lines</td></tr>
+      <tr><td><code>ChatTUI</code></td><td><code>screenContent[]</code></td><td>Current visual pane lines</td></tr>
+      <tr><td><code>ChatTUI</code></td><td><code>scrollOffset</code>, <code>screenScrollOffset</code></td><td>Scroll positions for each pane</td></tr>
+      <tr><td><code>ChatTUI</code></td><td><code>isWaiting</code></td><td>Locks input during API call</td></tr>
+      <tr><td><code>MessageClient</code></td><td><code>messages[]</code></td><td>Full conversation history sent to API</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ── Config ── -->
+  <h2>Configuration</h2>
+  <table>
+    <thead>
+      <tr><th>Setting</th><th>Location</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Model</td><td><code>lib/client.mjs</code></td><td><code>claude-sonnet-4-20250514</code></td></tr>
+      <tr><td>Max tokens</td><td><code>lib/client.mjs</code></td><td><code>8096</code></td></tr>
+      <tr>
+        <td>API key <span class="badge">warning</span></td>
+        <td><code>lib/client.mjs</code></td>
+        <td>Hardcoded — should use <code>ANTHROPIC_API_KEY</code> env var</td>
+      </tr>
+      <tr><td>Shell buffer</td><td><code>tools/shell.mjs</code></td><td>10 MB</td></tr>
+      <tr><td>Min terminal size</td><td><code>lib/ui.mjs</code></td><td>20 cols × 15 rows</td></tr>
+    </tbody>
+  </table>
+
+</div>
+</body>
+</html>
