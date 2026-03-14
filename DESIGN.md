@@ -206,6 +206,6 @@ Runs an arbitrary shell command via `execSync`. Returns combined stdout/stderr (
 |---------|----------|-------|
 | Model | `lib/client.mjs` | `claude-sonnet-4-20250514` |
 | Max tokens | `lib/client.mjs` | `8096` |
-| API key | `lib/client.mjs` | Hardcoded (should use `ANTHROPIC_API_KEY` env var) |
+| API key | `lib/client.mjs` | `ANTHROPIC_API_KEY` env var |
 | Shell buffer | `tools/shell.mjs` | 10 MB |
 | Min terminal size | `lib/ui.mjs` | 20 cols × 15 rows |
